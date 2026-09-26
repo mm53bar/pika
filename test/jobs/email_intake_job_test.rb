@@ -85,22 +85,42 @@ class EmailIntakeJobTest < ActiveJob::TestCase
     assert_equal 1, llm.calls, "a released message must not be re-read on every pass"
   end
 
-  test "while the LLM is down a message stays in the shared inbox and is retried" do
-    mailbox = FakeMailbox.new([ order ])
+  test "an unreachable or busy LLM uses up no attempts, however long it lasts" do
+    mailbox = FakeMailbox.new([ order(from: "Shop <orders@example-outfitters.test>") ])
     llm = FakeLlm.new(unavailable: true)
 
-    3.times { EmailIntakeJob.perform_now(mailbox: mailbox, llm: llm) }
-    4.times { EmailIntakeJob.perform_now(mailbox: mailbox, llm: llm) }
+    5.times { EmailIntakeJob.perform_now(mailbox: mailbox, llm: llm) }
 
     email = InboundEmail.find_by!(message_id: "o1@x")
-    assert_equal InboundEmail::MAX_TRIAGE_ATTEMPTS, email.triage_attempts
+    assert_equal 0, email.triage_attempts
+    assert_equal 5, llm.calls, "it keeps trying on every pass"
+    assert_empty mailbox.archived, "not claimed until the LLM has read it"
+  end
+
+  test "once the LLM is back, a message it couldn't reach is read and claimed" do
+    mailbox = FakeMailbox.new([ order ])
+
+    EmailIntakeJob.perform_now(mailbox: mailbox, llm: FakeLlm.new(unavailable: true))
+    EmailIntakeJob.perform_now(mailbox: mailbox, llm: FakeLlm.new(GEAR))
+
+    assert InboundEmail.find_by!(message_id: "o1@x").claimed?
+    assert_equal [ "o1@x" ], mailbox.archived
+  end
+
+  test "unusable answers are given up on after three, and stay in the shared inbox" do
+    mailbox = FakeMailbox.new([ order ])
+    llm = FakeLlm.new({ "nonsense" => true })
+
+    5.times { EmailIntakeJob.perform_now(mailbox: mailbox, llm: llm) }
+
+    assert_equal InboundEmail::MAX_TRIAGE_ATTEMPTS, InboundEmail.find_by!(message_id: "o1@x").triage_attempts
     assert_equal InboundEmail::MAX_TRIAGE_ATTEMPTS, llm.calls
     assert_empty mailbox.archived
   end
 
   test "a known retailer's email is claimed once the retries run out, for a human to read" do
     mailbox = FakeMailbox.new([ order(from: "Shop <orders@example-outfitters.test>") ])
-    llm = FakeLlm.new(unavailable: true)
+    llm = FakeLlm.new({ "nonsense" => true })
 
     2.times { EmailIntakeJob.perform_now(mailbox: mailbox, llm: llm) }
     assert_empty mailbox.archived

@@ -46,7 +46,7 @@ class LlmClient
 
     res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
                           open_timeout: 10, read_timeout: timeout) { |h| h.request(req) }
-    raise Unavailable, "HTTP #{res.code}" if res.code.to_i >= 500
+    raise Unavailable, "HTTP #{res.code}" if retryable_status?(res.code.to_i)
     return nil unless res.code.to_i.between?(200, 299)
 
     content = JSON.parse(res.body).dig("choices", 0, "message", "content")
@@ -62,6 +62,11 @@ class LlmClient
   end
 
   private
+
+  # 408 and 429 — a request timeout, or too many concurrent requests on a shared
+  # account — are the endpoint being busy, not an answer. Treating them as
+  # unusable would count a temporary outage against the email being read.
+  def retryable_status?(code) = code == 408 || code == 429 || code >= 500
 
   # Some models wrap JSON in a Markdown fence even in JSON mode.
   def unfenced(content)

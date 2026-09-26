@@ -55,8 +55,7 @@ class InboundEmailsController < ApplicationController
       format.json { render :show }
     end
   rescue LlmClient::Unavailable
-    @inbound_email.record_triage_attempt!
-    refuse("The LLM is unreachable right now.")
+    refuse("The LLM is unreachable or busy right now. Try again shortly.")
   end
 
   private

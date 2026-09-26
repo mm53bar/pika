@@ -35,8 +35,11 @@ Two passes, and the second one decides.
   failed every retry but a known retailer sent it.
 - If the LLM says it is not gear, the email is recorded as `not_gear`, left where it is, and
   never read or moved again.
-- If the LLM is unreachable the message stays in INBOX and is retried on later passes, up to
-  three attempts.
+- If the LLM is unreachable or busy (timeouts, 408, 429, 5xx) the message stays in INBOX and
+  is read on a later pass, however long that takes. Only answers that couldn't be used
+  count towards the three attempts before giving up.
+- Intake runs every 15 minutes offset from the quarter hours, so it doesn't call the LLM at
+  the same moment as another app sharing the account.
 
 The IMAP rules come from the sibling app that established this mailbox pattern: fetch with
 `BODY.PEEK[]` so read state is never touched, move only into Pika's own folder, and capture
@@ -53,8 +56,8 @@ proposed lines until a human adds (optionally editing, or dropping lines) or ign
   filter can still take gear orders before Pika sees them. That is for that reader to fix.
 - Every flagged message costs an LLM call, a few seconds each. At household volumes this is
   nothing.
-- A long LLM outage leaves gear emails in the shared inbox rather than in Pika. Retrying from
-  the Inbox page resets the attempts.
+- A long LLM outage leaves gear emails in the shared inbox rather than in Pika, where another
+  reader could take them first. They are claimed once the LLM is back.
 - Without an LLM configured, intake captures but claims nothing and proposes nothing.
 - Review before adding keeps a misread line out of the inventory, at the cost of a click per
   order. Automatic adding for high-confidence reads can come later without changing this

@@ -49,9 +49,11 @@ class EmailIntakeJob < ApplicationJob
 
     result = triager.triage
     result ? inbound.apply_triage!(result) : inbound.record_triage_attempt!
+  # An unreachable or busy LLM says nothing about the email, so it uses up none
+  # of the attempts: the message stays in the shared inbox and is read on a later
+  # pass. Only an answer that couldn't be used counts towards giving up.
   rescue LlmClient::Unavailable => e
     Rails.logger.warn("EmailIntakeJob: triage unavailable for ##{inbound.id}: #{e.message}")
-    inbound.record_triage_attempt!
   end
 
   # Capture happens before the move: if storing had failed, the message would

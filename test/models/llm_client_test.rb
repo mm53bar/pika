@@ -38,6 +38,18 @@ class LlmClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "too many requests or a request timeout is Unavailable, not an unusable answer" do
+    %w[ 429 408 ].each do |code|
+      answering("{}", code: code) do |client|
+        assert_raises(LlmClient::Unavailable, code) { client.complete_json(system: "s", user: "u") }
+      end
+    end
+  end
+
+  test "a client error other than those is an unusable answer" do
+    answering("{}", code: "400") { |client| assert_nil client.complete_json(system: "s", user: "u") }
+  end
+
   test "an unconfigured client answers nothing" do
     assert_nil LlmClient.new(base_url: nil, model: nil).complete_json(system: "s", user: "u")
   end

@@ -6,8 +6,9 @@
 class InboundEmail < ApplicationRecord
   STATUSES = %w[ received added ignored not_gear ].freeze
 
-  # A single failed read is far more often the LLM being briefly unreachable
-  # than an email that can't be read, so triage is retried on later passes.
+  # Answers the LLM gave that couldn't be used. Models are inconsistent, so one bad
+  # answer is retried on later passes; three means the email itself is the
+  # problem. An unreachable or busy LLM doesn't count (see EmailIntakeJob).
   MAX_TRIAGE_ATTEMPTS = 3
 
   has_many :items, dependent: :nullify
