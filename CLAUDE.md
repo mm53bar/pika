@@ -57,6 +57,11 @@ read the code and `docs/adr/` for the actual design.
   `script/production-boot-check` for this reason. When a test asserts the *absence* of a
   protection, switch that protection on inside the test and assert both halves — see the CSRF
   test in `test/integration/api_test.rb`.
+- **A migration that rebuilds an existing SQLite table declares `disable_ddl_transaction!`.**
+  Adding a foreign key, or changing a column's type, null or default, rebuilds the table, and
+  inside a transaction the drop cascades to every child row — this deleted every trip line once.
+  `test/models/migration_safety_test.rb` enforces it. See
+  `docs/adr/20260926-sqlite-table-rebuilds-run-outside-a-transaction.md`.
 - Run `bin/ci` before considering work complete — the full gate, not just `bin/rails test`.
   If it fails, fix or surface it; do not declare work done.
 - Secrets are a plain `SECRET_KEY_BASE` env var. Rails encrypted credentials are unused and
