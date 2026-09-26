@@ -9,11 +9,11 @@ class ItemsController < ApplicationController
     @retired = params[:retired] == "1"
     @items = Item.ordered
 
-    if request.format.html?
-      @items = @items.where(status: @status, retired: @retired)
-    else
+    if request.format.json?
       @items = @items.where(status: params[:status]) if params.key?(:status)
       @items = @items.where(retired: @retired) if params.key?(:retired)
+    else
+      @items = @items.where(status: @status, retired: @retired)
     end
   end
 

@@ -11,6 +11,18 @@ class PagesTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "Example Retired Mat", count: 0
   end
 
+  # curl and most agents send Accept: */*, for which Rails renders HTML but
+  # request.format.html? is false. Pages must branch on JSON, not on HTML.
+  test "pages render for a client that accepts anything" do
+    get root_path, headers: { "Accept" => "*/*" }
+    assert_response :success
+    assert_select "a", text: "Example Wishlist Pack", count: 0
+
+    get inbound_emails_path, headers: { "Accept" => "*/*" }
+    assert_response :success
+    assert_select "h1", "Inbox"
+  end
+
   test "the wishlist and retired filters" do
     get items_path(status: "wishlist")
     assert_select "a", "Example Wishlist Pack"

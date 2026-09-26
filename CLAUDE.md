@@ -43,6 +43,9 @@ read the code and `docs/adr/` for the actual design.
   verbatim at `/llms.txt` and `/docs/api` — keep it in step with any change to routes,
   fields or JSON shapes. `test/integration/discovery_test.rb` checks every advertised
   discovery URL resolves.
+- **Branch on `request.format.json?`, never `request.format.html?`.** curl and agents send
+  `Accept: */*`, which renders HTML while `html?` is false — the page then gets the JSON
+  branch's instance variables and crashes. `test/integration/pages_test.rb` covers it.
 - **Grams reach JSON as numbers.** Use `PackWeight.json_grams` for any weight in a view;
   Rails would serialise a decimal as a string.
 - Prefer Rails conventions over architecture-heavy patterns. No `app/services/`. Extract

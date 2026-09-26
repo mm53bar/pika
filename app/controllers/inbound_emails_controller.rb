@@ -4,12 +4,12 @@ class InboundEmailsController < ApplicationController
   # The page shows what's waiting for review plus recent history. JSON takes
   # ?status= and otherwise returns everything captured.
   def index
-    if request.format.html?
-      @waiting = InboundEmail.awaiting_review.ordered
-      @recent = InboundEmail.where.not(id: @waiting.select(:id)).ordered.limit(20)
-    else
+    if request.format.json?
       @inbound_emails = InboundEmail.ordered
       @inbound_emails = @inbound_emails.where(status: params[:status]) if params.key?(:status)
+    else
+      @waiting = InboundEmail.awaiting_review.ordered
+      @recent = InboundEmail.where.not(id: @waiting.select(:id)).ordered.limit(20)
     end
   end
 
