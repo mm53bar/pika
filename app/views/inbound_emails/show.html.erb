@@ -58,7 +58,7 @@
         </div>
         <div>
           <%= label_tag "items_#{index}_category", "Category", class: label_classes %>
-          <%= text_field_tag "items[#{index}][category]", line["category"], id: "items_#{index}_category", list: "item-categories", class: field_classes %>
+          <div class="mt-1"><%= category_select(name: "items[#{index}][category]", id: "items_#{index}_category", selected: line["category"]) %></div>
         </div>
         <div class="sm:col-span-2">
           <%= label_tag "items_#{index}_weight_grams", "Listed weight (g)", class: label_classes %>
@@ -76,9 +76,6 @@
         </div>
       </fieldset>
     <% end %>
-    <datalist id="item-categories">
-      <% Item.categories.each do |category| %><option value="<%= category %>"><% end %>
-    </datalist>
     <%= form.submit "Save to gear", class: button_classes %>
   <% end %>
 <% elsif @inbound_email.status == "received" %>

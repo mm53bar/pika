@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* dark: applies only under an explicit .dark class, which Pika never sets.
+   Without this it follows the OS setting, and components that carry dark:
+   variants (the select) would turn dark on an otherwise light page. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@import "./tom-select.css";
+@import "./select.css";

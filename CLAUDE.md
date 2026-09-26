@@ -51,8 +51,14 @@ read the code and `docs/adr/` for the actual design.
 - Prefer Rails conventions over architecture-heavy patterns. No `app/services/`. Extract
   nouns, not verbs. Reach for a plain model method before a new abstraction.
 - Testing: Minitest with fixtures, Rack integration tests via `ActionDispatch::IntegrationTest`
-  + `assert_select`. No RSpec, no factories, no mocking library, no Capybara — see
-  `docs/adr/20260926-integration-tests-over-system-tests.md`.
+  + `assert_select`. No RSpec, no factories, no mocking library — see
+  `docs/adr/20260926-integration-tests-over-system-tests.md`. The one exception: system tests
+  (Capybara + Cuprite) for the searchable select, whose behaviour only exists in a browser —
+  see `docs/adr/20260926-browser-tests-for-the-searchable-select.md`.
+- **Categories are picked with `category_select`**, never a raw text field or `<datalist>`.
+  The select itself (`select_controller.js`, `shared/components/select/`,
+  `app/assets/tailwind/select.css`) is vendored from Rails Blocks and credited in the README —
+  keep the credit, and prefer configuring it through the partial's locals over editing it.
 - **Test-environment defaults can hide production failures.** `bin/ci` runs
   `script/production-boot-check` for this reason. When a test asserts the *absence* of a
   protection, switch that protection on inside the test and assert both halves — see the CSRF

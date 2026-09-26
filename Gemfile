@@ -51,6 +51,13 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 end
 
+group :test do
+  # Real-browser tests, for the one page behaviour that lives in JavaScript: the
+  # searchable select. Cuprite drives Chrome directly, with no driver to install.
+  gem "capybara"
+  gem "cuprite"
+end
+
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"

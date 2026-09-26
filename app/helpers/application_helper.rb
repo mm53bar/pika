@@ -49,6 +49,17 @@ module ApplicationHelper
     end
   end
 
+  # Pick an existing category or type a new one. Offers every category in use,
+  # plus the current value so an unsaved new one survives a re-rendered form.
+  def category_select(name:, id:, selected:)
+    render "shared/components/select/select",
+      name: name, id: id, selected: selected,
+      options: (Item.categories | [ selected ]).compact_blank.sort,
+      allow_new: true, disable_typing: false, clearable: false, required: true, dropdown_input: true,
+      placeholder: "Choose a category", dropdown_input_placeholder: "Search or add a category",
+      create_text: "New category"
+  end
+
   def field_classes = "mt-1 w-full rounded-md border border-stone-300 px-3 py-2"
 
   def label_classes = "block text-sm font-medium text-stone-700"

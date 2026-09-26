@@ -14,10 +14,7 @@
 
     <div>
       <%= form.label :category, class: label_classes %>
-      <%= form.text_field :category, required: true, list: "item-categories", class: field_classes %>
-      <datalist id="item-categories">
-        <% Item.categories.each do |category| %><option value="<%= category %>"><% end %>
-      </datalist>
+      <div class="mt-1"><%= category_select(name: "item[category]", id: "item_category", selected: item.category) %></div>
     </div>
 
     <div>

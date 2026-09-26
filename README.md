@@ -32,3 +32,11 @@ on a mounted volume). Set `SECRET_KEY_BASE`, the volume path and the `user:` UID
 
 There is **no authentication**. Run it only somewhere that isn't publicly reachable — see
 `docs/adr/20260926-no-auth-needed.md`.
+
+## Credits
+
+The searchable select (`app/javascript/controllers/select_controller.js`,
+`app/views/shared/components/select/`, `app/assets/tailwind/select.css`) is from
+[Rails Blocks](https://railsblocks.com), built on [Tom Select](https://tom-select.js.org)
+(Apache 2.0) and [Floating UI](https://floating-ui.com) (MIT).
+
