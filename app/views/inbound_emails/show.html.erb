@@ -12,7 +12,9 @@
     <div class="mt-2"><%= badge(@inbound_email.status.humanize) %></div>
   </div>
   <div class="flex gap-2">
-    <%= button_to "Read again", retriage_inbound_email_path(@inbound_email), class: button_classes(:secondary) %>
+    <% if @inbound_email.retriageable? %>
+      <%= button_to "Read again", retriage_inbound_email_path(@inbound_email), class: button_classes(:secondary) %>
+    <% end %>
     <% if @inbound_email.status == "received" %>
       <%= button_to "Ignore", ignore_inbound_email_path(@inbound_email), class: button_classes(:secondary) %>
     <% end %>

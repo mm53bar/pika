@@ -43,6 +43,8 @@ class InboundEmailsController < ApplicationController
   end
 
   def retriage
+    return refuse("Already handled.") unless @inbound_email.retriageable?
+
     @inbound_email.retry_triage!
     triager = GearTriager.new(@inbound_email)
     result = triager.available? ? triager.triage : nil

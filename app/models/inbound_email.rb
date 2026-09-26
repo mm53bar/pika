@@ -47,6 +47,10 @@ class InboundEmail < ApplicationRecord
 
   def record_triage_attempt! = increment!(:triage_attempts)
 
+  # Once a human has added or ignored an email its proposal is history: reading it
+  # again would reopen it and let the same order be added twice.
+  def retriageable? = status.in?(%w[ received not_gear ])
+
   def retry_triage! = update!(triage_attempts: 0, proposed_items: nil, status: "received")
 
   ACTIONS = %w[ add link skip ].freeze

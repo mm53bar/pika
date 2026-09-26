@@ -178,7 +178,7 @@ An inbound email:
 |---|---|
 | `POST /inbound_emails/:id/add_items.json` | Applies a review and marks it `added`. Send `{"items": [...]}` with each line's fields plus an `action`: `add` (a new owned item), `link` with an `item_id` (record the purchase on that existing item) or `skip`. With no body it takes the default review: `link` for lines matching an item already in the inventory, `add` for the rest. `422` if already handled or every line is skipped. |
 | `POST /inbound_emails/:id/ignore.json` | Marks it `ignored` |
-| `POST /inbound_emails/:id/retriage.json` | Has the LLM read it again now |
+| `POST /inbound_emails/:id/retriage.json` | Has the LLM read it again now. Only for `received` or `not_gear`; `422` once it has been added or ignored. |
 
 An order line for several of one thing becomes a single item; the count goes in its
 notes, with the retailer and order number. Recording a purchase on an existing item sets

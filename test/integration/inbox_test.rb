@@ -89,6 +89,18 @@ class InboxTest < ActionDispatch::IntegrationTest
     assert_select "p", /couldn't read it/
   end
 
+  test "a handled email can't be read again, so its order can't be added twice" do
+    email = inbound_emails(:handled)
+
+    post retriage_inbound_email_path(email, format: :json), as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "added", email.reload.status
+
+    get inbound_email_path(email)
+    assert_select "button", text: "Read again", count: 0
+  end
+
   test "the index JSON filters by status" do
     get inbound_emails_path(format: :json, status: "added")
 
