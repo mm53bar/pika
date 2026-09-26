@@ -89,6 +89,7 @@ delete the line and create a new one.
 | `notes` | string | |
 
 Read-only in responses: `id`, `effective_weight_grams` (measured, else listed),
+`average_rating` (across the trips it was rated on, or `null`),
 `inbound_email_id` (the order email it was added from, if any), `url`, `created_at`,
 `updated_at`.
 
@@ -104,9 +105,19 @@ only). `?status=owned&retired=0` is what you own and still use.
 | `trail`, `destination`, `season`, `terrain` | string | Free text |
 | `starts_on`, `ends_on` | date | `ends_on` must not be before `starts_on` |
 | `notes` | string | |
+| `report` | string | Trip report: how it went |
+| `worked_well` | string | Trip report: what worked well |
+| `didnt_work` | string | Trip report: what didn't |
 
-Read-only: `nights` (from the dates, or `null`), `kit_id` (the last kit it was packed
+Read-only: `nights` (from the dates, or `null`), `past` (its last day has gone by),
+`reported_on` (when the report was first filed), `kit_id` (the last kit it was packed
 from), `url`.
+
+**Filing a trip report:** `PATCH /trips/:id/report.json` with
+`{"trip": {"report": …, "worked_well": …, "didnt_work": …}, "lines": [{"id": <trip item id>, "rating": 1–5 or null, "review": …}]}`.
+Every field is optional; `lines` may also be an object keyed by trip item id. Lines from
+another trip are ignored. The first report sets `reported_on`; later edits keep it. `422`
+for a rating outside 1–5, with nothing saved.
 
 `GET /trips/:id.json` also returns `weight`, `trip_items`, `trip_meals`,
 `meal_calories` and `meal_weight_grams`.
@@ -119,6 +130,7 @@ from), `url`.
 | `quantity` | integer > 0 | Default 1 |
 | `worn` | boolean | **Omitted on create → the item's own `worn`.** |
 | `weight_grams_override` | integer ≥ 0 | Trip items only. This line's total weight for this trip, ignoring quantity. |
+| `rating`, `review` | 1–5, string | Trip items only. How the item did on this trip; set through the trip report. |
 | `notes` | string | |
 
 Read-only: `name`, `category`, `consumable` (all from the item) and `line_weight_grams`.

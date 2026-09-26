@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_200958) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_222932) do
   create_table "inbound_emails", force: :cascade do |t|
     t.string "message_id", null: false
     t.string "from_address"
@@ -131,6 +131,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_200958) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "rating"
+    t.text "review"
     t.index ["item_id"], name: "index_trip_items_on_item_id"
     t.index ["trip_id", "item_id"], name: "index_trip_items_on_trip_id_and_item_id", unique: true
     t.index ["trip_id"], name: "index_trip_items_on_trip_id"
@@ -159,6 +161,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_200958) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "report"
+    t.text "worked_well"
+    t.text "didnt_work"
+    t.date "reported_on"
     t.index ["kit_id"], name: "index_trips_on_kit_id"
   end
 

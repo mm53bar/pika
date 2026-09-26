@@ -9,6 +9,7 @@ Rails.application.routes.draw do
 
   resources :trips do
     post :pack, on: :member
+    patch :report, on: :member
     resources :trip_items, only: %i[ create update destroy ], shallow: true
     resources :trip_meals, only: %i[ create update destroy ], shallow: true
   end

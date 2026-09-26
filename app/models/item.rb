@@ -31,4 +31,12 @@ class Item < ApplicationRecord
   end
 
   def display_name = [ manufacturer, name ].compact_blank.join(" ")
+
+  # How it did on each trip it was rated or noted on, most recent trip first.
+  def trip_reviews = trip_items.reviewed.includes(:trip).sort_by { |line| line.trip.starts_on || Date.new(0) }.reverse
+
+  def average_rating
+    ratings = trip_items.where.not(rating: nil).pluck(:rating)
+    (ratings.sum.to_f / ratings.size).round(1) if ratings.any?
+  end
 end

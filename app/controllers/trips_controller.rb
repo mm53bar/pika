@@ -1,5 +1,5 @@
 class TripsController < ApplicationController
-  before_action :set_trip, only: %i[ show edit update destroy pack ]
+  before_action :set_trip, only: %i[ show edit update destroy pack report ]
 
   def index
     @trips = Trip.ordered
@@ -58,7 +58,36 @@ class TripsController < ApplicationController
     end
   end
 
+  # A trip report: how it went, and a rating and note per packed item.
+  # `lines` maps trip item ids to {rating, review}.
+  def report
+    @trip.file_report!(params.fetch(:trip, {}).permit(*Trip::REPORT_FIELDS).to_h, report_lines)
+
+    respond_to do |format|
+      format.html { redirect_to @trip, notice: "Trip report saved.", status: :see_other }
+      format.json { render :show }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html { redirect_to @trip, alert: e.record.errors.full_messages.to_sentence, status: :see_other }
+      format.json { render json: { errors: e.record.errors }, status: :unprocessable_entity }
+    end
+  end
+
   private
+
+  # The form sends a hash keyed by trip item id; JSON may send an array of
+  # {id, rating, review}.
+  def report_lines
+    raw = params[:lines]
+    pairs =
+      case raw
+      when Array then raw.map { |line| [ line[:id].to_s, line ] }
+      when ActionController::Parameters then raw.keys.map { |id| [ id, raw[id] ] }
+      else []
+      end
+    pairs.to_h { |id, line| [ id, { "rating" => line[:rating], "review" => line[:review] } ] }
+  end
 
   def set_trip
     @trip = Trip.find(params.expect(:id))

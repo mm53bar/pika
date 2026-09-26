@@ -4,6 +4,9 @@ class TripItem < ApplicationRecord
 
   validates :item_id, uniqueness: { scope: :trip_id }
   validates :weight_grams_override, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :rating, inclusion: { in: 1..5 }, allow_nil: true
+
+  scope :reviewed, -> { where.not(rating: nil).or(where.not(review: [ nil, "" ])) }
 
   def line_weight_grams = weight_grams_override || super
 end

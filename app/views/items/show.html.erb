@@ -40,11 +40,21 @@
 <% end %>
 
 <section class="mt-8">
-  <h2 class="mb-2 font-semibold text-stone-700">Trips</h2>
+  <h2 class="mb-2 font-semibold text-stone-700">
+    Trips
+    <% if (average = @item.average_rating) %><span class="ml-2 text-sm font-normal text-stone-500">★ <%= average %> average</span><% end %>
+  </h2>
   <% if @trips.any? %>
-    <ul class="space-y-1 text-sm">
+    <% reviews = @item.trip_reviews.index_by(&:trip_id) %>
+    <ul class="space-y-2 text-sm">
       <% @trips.each do |trip| %>
-        <li><%= link_to trip.name, trip, class: "hover:text-teal-800" %> <span class="text-stone-500"><%= trip.starts_on&.to_fs(:long) %></span></li>
+        <li>
+          <%= link_to trip.name, trip, class: "hover:text-teal-800" %> <span class="text-stone-500"><%= trip.starts_on&.to_fs(:long) %></span>
+          <% if (line = reviews[trip.id]) %>
+            <% if line.rating %><span class="ml-1 text-amber-700"><%= "★" * line.rating %></span><% end %>
+            <% if line.review.present? %><p class="text-stone-600"><%= line.review %></p><% end %>
+          <% end %>
+        </li>
       <% end %>
     </ul>
   <% else %>
