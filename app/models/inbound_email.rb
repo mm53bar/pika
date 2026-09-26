@@ -49,20 +49,36 @@ class InboundEmail < ApplicationRecord
 
   def retry_triage! = update!(triage_attempts: 0, proposed_items: nil, status: "received")
 
-  # An inventory item with the same name and maker, if there is one. Matching is
-  # case-insensitive because order emails and hand-typed names rarely agree on it.
-  def existing_item_for(line)
-    Item.where("lower(name) = ?", line["name"].to_s.downcase)
-        .find { |item| item.manufacturer.to_s.casecmp?(line["manufacturer"].to_s) }
+  ACTIONS = %w[ add link skip ].freeze
+
+  # The inventory item a proposed line already is, if any (see ItemMatcher).
+  def existing_item_for(line) = matcher.match(line)
+
+  # The proposal with each line's default decision: record the purchase on the
+  # item it matches, otherwise add it as new.
+  def default_review
+    proposal.map do |line|
+      existing = existing_item_for(line)
+      existing ? line.merge("action" => "link", "item_id" => existing.id) : line.merge("action" => "add")
+    end
   end
 
-  # Creates one owned item per line and marks this email handled. An order line
-  # for several of something becomes one item; the count goes in its notes.
-  def add_items!(lines = proposal)
+  # Applies a reviewed proposal: each line is added as a new owned item, recorded
+  # as a purchase of an existing one, or skipped. An order line for several of
+  # something becomes one item; the count goes in its notes. Returns the items
+  # touched, and marks this email handled.
+  def review!(lines = default_review)
     transaction do
-      created = lines.map { |line| Item.create!(item_attributes(line)) }
-      update!(status: "added", created_item_ids: created.map(&:id))
-      created
+      touched = lines.filter_map do |line|
+        case line["action"]
+        when "add" then Item.create!(item_attributes(line))
+        when "link" then record_purchase_on!(Item.find(line["item_id"]))
+        end
+      end
+      raise ArgumentError, "Nothing selected to add." if touched.empty?
+
+      update!(status: "added", created_item_ids: touched.select(&:previously_new_record?).map(&:id))
+      touched
     end
   end
 
@@ -70,13 +86,30 @@ class InboundEmail < ApplicationRecord
 
   private
 
+  def matcher = @matcher ||= ItemMatcher.new
+
+  def purchase_date = ordered_on || received_at.to_date
+
+  # Buying something already in the inventory: note when and where, keep any
+  # earlier purchase date, and promote a wishlist item to owned.
+  def record_purchase_on!(item)
+    note = purchase_note
+    item.update!(
+      purchased_on: item.purchased_on || purchase_date,
+      inbound_email: item.inbound_email || self,
+      status: "owned",
+      notes: note && !item.notes.to_s.include?(note) ? [ item.notes.presence, note ].compact.join("\n") : item.notes
+    )
+    item
+  end
+
   def item_attributes(line)
     quantity = line["quantity"].to_i
     {
       name: line["name"], manufacturer: line["manufacturer"].presence, category: line["category"].presence || "Misc",
       weight_grams: line["weight_grams"].presence, worn: ActiveModel::Type::Boolean.new.cast(line["worn"]) || false,
       consumable: ActiveModel::Type::Boolean.new.cast(line["consumable"]) || false,
-      status: "owned", purchased_on: ordered_on || received_at.to_date, inbound_email: self,
+      status: "owned", purchased_on: purchase_date, inbound_email: self,
       notes: [ line["notes"].presence, ("Bought #{quantity}." if quantity > 1), purchase_note ].compact.join("\n")
     }
   end

@@ -28,13 +28,24 @@
     <% @inbound_email.proposal.each_with_index do |line, index| %>
       <% existing = @inbound_email.existing_item_for(line) %>
       <fieldset class="grid gap-3 rounded-md border border-stone-200 bg-white p-4 sm:grid-cols-6">
-        <label class="flex items-center gap-2 text-sm font-medium sm:col-span-6">
-          <%= hidden_field_tag "items[#{index}][include]", "0", id: nil %>
-          <%= check_box_tag "items[#{index}][include]", "1", existing.nil?, id: "items_#{index}_include" %>
-          Add this
-          <% if existing %>— <span class="font-normal text-amber-800">already in your gear as <%= link_to existing.display_name, existing, class: "underline" %></span><% end %>
-          <% if line["quantity"].to_i > 1 %><span class="font-normal text-stone-500">· bought <%= line["quantity"] %></span><% end %>
-        </label>
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:col-span-6">
+          <% if existing %>
+            <%= hidden_field_tag "items[#{index}][item_id]", existing.id, id: nil %>
+            <label class="flex items-center gap-1.5 font-medium">
+              <%= radio_button_tag "items[#{index}][action]", "link", true, id: "items_#{index}_action_link" %>
+              Record this purchase on <%= link_to existing.display_name, existing, class: "underline" %>
+            </label>
+          <% end %>
+          <label class="flex items-center gap-1.5 <%= "font-medium" unless existing %>">
+            <%= radio_button_tag "items[#{index}][action]", "add", existing.nil?, id: "items_#{index}_action_add" %>
+            <%= existing ? "Add as a new item" : "Add to gear" %>
+          </label>
+          <label class="flex items-center gap-1.5">
+            <%= radio_button_tag "items[#{index}][action]", "skip", false, id: "items_#{index}_action_skip" %>
+            Skip
+          </label>
+          <% if line["quantity"].to_i > 1 %><span class="text-stone-500">· bought <%= line["quantity"] %></span><% end %>
+        </div>
         <div class="sm:col-span-3">
           <%= label_tag "items_#{index}_name", "Name", class: label_classes %>
           <%= text_field_tag "items[#{index}][name]", line["name"], id: "items_#{index}_name", class: field_classes %>
@@ -66,7 +77,7 @@
     <datalist id="item-categories">
       <% Item.categories.each do |category| %><option value="<%= category %>"><% end %>
     </datalist>
-    <%= form.submit "Add selected to gear", class: button_classes %>
+    <%= form.submit "Save to gear", class: button_classes %>
   <% end %>
 <% elsif @inbound_email.status == "received" %>
   <p class="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

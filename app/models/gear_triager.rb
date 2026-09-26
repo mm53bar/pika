@@ -17,7 +17,7 @@ class GearTriager
      "order_number": <string or null>,
      "ordered_on": <ISO date or null>,
      "items": [{"name", "manufacturer", "category", "quantity", "weight_grams",
-                "weight_source", "worn", "consumable", "notes"}],
+                "weight_source", "worn", "consumable", "notes", "existing_item_id"}],
      "reason": "one sentence"}
 
     Rules:
@@ -25,11 +25,18 @@ class GearTriager
       bookings, bills, subscriptions, services, newsletters, marketing. Then items is [].
     - One entry per product line actually bought in this order. Skip shipping, tax, discounts,
       gift cards, fees, and anything under "you might also like" or similar recommendations.
-    - manufacturer is the brand (null if unknown). name is the rest of the product title with
-      ONLY the brand removed: keep the model or product-line name. "Acme Ridgeline 2 Tent" is
+    - Order emails often put a line's variant or option on the line below it
+      ("Footprint × 1" then "Ridgeline 2" means a footprint in its Ridgeline 2 variant). That
+      line is part of the item above: fold it into that item's name or notes, never make it
+      an item of its own.
+    - manufacturer is the brand (null if unknown). When the store sells its own brand and a line
+      names no other brand, the store is the manufacturer. name is the rest of the product
+      title with ONLY the brand removed: keep the model or product-line name. "Acme Ridgeline 2 Tent" is
       manufacturer "Acme", name "Ridgeline 2 Tent" — never just "Tent". Size, colour or
       capacity go in notes, not in name.
-    - category: choose from EXISTING CATEGORIES when one fits; otherwise a short new one.
+    - category: choose from EXISTING CATEGORIES when one fits; otherwise a short new one. A
+      category is what the thing is: tents, tarps and footprints are shelter;
+      packs and stuff sacks are packs.
     - quantity: integer, as ordered.
     - weight_grams: an integer only if the email explicitly lists the item's weight, such as
       "Weight: 410 g" (weight_source "email"), or you are confident of the manufacturer's
@@ -41,15 +48,20 @@ class GearTriager
       chemicals, fire starters). Containers, bottles, filters and food bags are false.
     - worn: true only for shoes and boots. Everything else, including socks, false.
     - notes: size, colour, capacity or variant from the line, else null.
+    - existing_item_id: the id of the INVENTORY item this line is — the same product, allowing
+      for the store and the inventory wording it differently ("Ridgeline 2 Tent" and "Acme
+      Ridgeline 2 Tent (Green)" are the same product). null when nothing in INVENTORY is that
+      product. A different product from the same maker is null, and so is an accessory for an
+      item in INVENTORY.
     JSON only.
   PROMPT
 
   WEIGHT_SOURCES = %w[ email published ].freeze
 
-  def initialize(email, client: LlmClient.from_env, categories: Item.categories)
+  def initialize(email, client: LlmClient.from_env, inventory: Item.active.ordered.to_a)
     @email = email
     @client = client
-    @categories = categories
+    @inventory = inventory
   end
 
   def available? = @client.configured?
@@ -72,8 +84,10 @@ class GearTriager
   private
 
   def user_prompt
+    categories = @inventory.map(&:category).uniq.sort.join(", ").presence || "(none yet)"
+    inventory = @inventory.map { |item| "- id=#{item.id} #{item.manufacturer.presence || "?"} | #{item.name} | #{item.category} | #{item.status}" }
     body = @email.body.to_s[0, 8000]
-    "EXISTING CATEGORIES: #{@categories.join(", ").presence || "(none yet)"}\n\n" \
+    "EXISTING CATEGORIES: #{categories}\n\nINVENTORY:\n#{inventory.join("\n").presence || "(empty)"}\n\n" \
       "EMAIL:\nSubject: #{@email.subject}\nFrom: #{@email.from_address}\n\n#{body}"
   end
 
@@ -92,9 +106,28 @@ class GearTriager
         "weight_source" => grams&.positive? ? source : nil,
         "worn" => raw["worn"] == true,
         "consumable" => raw["consumable"] == true,
-        "notes" => raw["notes"].presence&.to_s&.strip
-      }
+        "notes" => raw["notes"].presence&.to_s&.strip,
+        "existing_item_id" => known_item_id(raw["existing_item_id"])
+      }.tap { |line| line["manufacturer"] = inventory_spelling(line["manufacturer"]) }
     end
+  end
+
+  def known_item_id(value)
+    id = Integer(value, exception: false)
+    id if id && @inventory.any? { |item| item.id == id }
+  end
+
+  # The model often shortens a maker ("Acme" for "Acme Outdoors"). When exactly one
+  # maker already in the inventory starts with the same words, use its spelling so
+  # the two group and match together.
+  def inventory_spelling(maker)
+    return maker if maker.blank?
+
+    known = @inventory.filter_map(&:manufacturer).uniq
+    return known.find { |k| k.casecmp?(maker) } if known.any? { |k| k.casecmp?(maker) }
+
+    candidates = known.select { |k| k.downcase.start_with?("#{maker.downcase} ") }
+    candidates.one? ? candidates.first : maker
   end
 
   def parse_date(value)

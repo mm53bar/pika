@@ -10,25 +10,27 @@ class InboxTest < ActionDispatch::IntegrationTest
     assert_select "header a[href='#{inbound_emails_path}'] span", "2"
   end
 
-  test "reviewing: a duplicate line starts unticked, a new one ticked" do
+  test "reviewing: a line already in the gear defaults to recording the purchase on it" do
     get inbound_email_path(inbound_emails(:waiting_order))
 
     assert_response :success
-    assert_select "input#items_0_include:not([checked])"
-    assert_select "input#items_1_include[checked]"
-    assert_select "label", /already in your gear as/
+    assert_select "input#items_0_action_link[checked]"
+    assert_select "label", /Record this purchase on\s+Example Co Example Tent/
+    assert_select "input#items_1_action_add[checked]"
+    assert_select "input#items_1_action_link", count: 0
   end
 
-  test "adding reviewed lines, with edits, skips the unticked one" do
+  test "saving a review: one line recorded on existing gear, one added with edits" do
     email = inbound_emails(:waiting_order)
 
     assert_difference -> { Item.count }, 1 do
       post add_items_inbound_email_path(email), params: { items: {
-        "0" => { include: "0", name: "Example Tent", manufacturer: "Example Co", category: "Shelter", quantity: "1" },
-        "1" => { include: "1", name: "Example Merino Socks", manufacturer: "Example Knits", category: "Clothing",
+        "0" => { action: "link", item_id: items(:tent).id, name: "Example Tent", manufacturer: "Example Co", category: "Shelter", quantity: "1" },
+        "1" => { action: "add", name: "Example Merino Socks", manufacturer: "Example Knits", category: "Clothing",
                  weight_grams: "60", quantity: "2", worn: "0", consumable: "0", notes: "Medium" }
       } }
     end
+    assert_equal email, items(:tent).reload.inbound_email
 
     assert_redirected_to inbound_emails_path
     item = Item.find_by!(name: "Example Merino Socks")
@@ -46,11 +48,22 @@ class InboxTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
-  test "over JSON, posting nothing takes the proposal as it stands" do
-    post add_items_inbound_email_path(inbound_emails(:waiting_order), format: :json), as: :json
+  test "over JSON, posting nothing takes the default review" do
+    assert_difference -> { Item.count }, 1 do
+      post add_items_inbound_email_path(inbound_emails(:waiting_order), format: :json), as: :json
+    end
 
     assert_response :created
-    assert_equal 2, response.parsed_body["created_item_ids"].size
+    assert_equal 1, response.parsed_body["created_item_ids"].size
+    assert_equal inbound_emails(:waiting_order), items(:tent).reload.inbound_email
+  end
+
+  test "skipping every line is refused" do
+    post add_items_inbound_email_path(inbound_emails(:waiting_order), format: :json),
+         params: { items: [ { action: "skip", name: "Example Tent" } ] }, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "received", inbound_emails(:waiting_order).reload.status
   end
 
   test "over JSON, posted lines replace the proposal and may drop some" do
@@ -84,7 +97,7 @@ class InboxTest < ActionDispatch::IntegrationTest
 
   test "an item added from an email links back to it" do
     email = inbound_emails(:waiting_order)
-    item = email.add_items!([ email.proposal.last ]).sole
+    item = email.review!([ email.proposal.last.merge("action" => "add") ]).sole
 
     get item_path(item)
     assert_select "a[href='#{inbound_email_path(email)}']", "order email"

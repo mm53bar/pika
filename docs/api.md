@@ -165,7 +165,7 @@ An inbound email:
 | `status` | `received` (awaiting review), `added`, `ignored`, or `not_gear` (the LLM said it isn't a gear purchase; left for other readers of the mailbox) |
 | `claimed` | Moved out of the shared inbox into Pika's folder |
 | `retailer`, `order_number`, `ordered_on` | As read by the LLM |
-| `proposed_items` | Lines the LLM read: `name`, `manufacturer`, `category`, `quantity`, `weight_grams`, `weight_source` (`email`, `published` or `null`), `worn`, `consumable`, `notes` |
+| `proposed_items` | Lines the LLM read: `name`, `manufacturer`, `category`, `quantity`, `weight_grams`, `weight_source` (`email`, `published` or `null`), `worn`, `consumable`, `notes`, `existing_item_id` (the inventory item the LLM thinks this line is, or `null`) |
 | `reason` | The LLM's one-line explanation |
 | `signals`, `score` | Why the first-pass filter flagged it |
 | `triage_attempts` | Failed LLM reads so far; retried up to 3 |
@@ -176,13 +176,19 @@ An inbound email:
 
 | Action | Effect |
 |---|---|
-| `POST /inbound_emails/:id/add_items.json` | Creates one owned item per line and marks it `added`. With no body it takes `proposed_items` as they stand; send `{"items": [...]}` (same fields) to add edited or fewer lines. `422` if already handled. |
+| `POST /inbound_emails/:id/add_items.json` | Applies a review and marks it `added`. Send `{"items": [...]}` with each line's fields plus an `action`: `add` (a new owned item), `link` with an `item_id` (record the purchase on that existing item) or `skip`. With no body it takes the default review: `link` for lines matching an item already in the inventory, `add` for the rest. `422` if already handled or every line is skipped. |
 | `POST /inbound_emails/:id/ignore.json` | Marks it `ignored` |
 | `POST /inbound_emails/:id/retriage.json` | Has the LLM read it again now |
 
 An order line for several of one thing becomes a single item; the count goes in its
-notes, with the retailer and order number. Before adding, check `GET /items.json` for the
-same name and manufacturer — the page flags those, but the API adds what it is sent.
+notes, with the retailer and order number. Recording a purchase on an existing item sets
+its `purchased_on` and order email only if it has none yet, appends the retailer and
+order number to its notes, and makes a wishlist or considering item `owned`.
+
+A line matches an existing item when the LLM named it (`existing_item_id`), else on the
+same name and maker, else when every word of its maker and name appears in exactly one
+item's (ignoring case, punctuation and anything in brackets). The review page and the
+default review both use this match.
 
 A retailer is `value` (an address or domain, matched anywhere in a message, lowercased),
 `name` and `active`. Retailers only make the first-pass filter surer; order language alone

@@ -16,21 +16,22 @@ class InboundEmailsController < ApplicationController
   def show
   end
 
-  # HTML posts the reviewed lines, with any edits and a per-line include flag.
-  # JSON may post `items` the same way, or nothing to take the proposal as-is.
+  # Posts the reviewed lines: each with an `action` (add, link, skip), `item_id`
+  # for a link, and any edits. JSON may post nothing to take the default review.
   def add_items
     return refuse("Already handled.") unless @inbound_email.status == "received"
 
-    lines = submitted_lines || @inbound_email.proposal
-    return refuse("Nothing selected to add.") if lines.empty?
-
-    created = @inbound_email.add_items!(lines)
+    touched = @inbound_email.review!(submitted_lines || @inbound_email.default_review)
     respond_to do |format|
-      format.html { redirect_to inbound_emails_path, notice: "Added #{created.size} #{"item".pluralize(created.size)} to your gear.", status: :see_other }
+      format.html { redirect_to inbound_emails_path, notice: "Updated #{touched.size} #{"item".pluralize(touched.size)} in your gear.", status: :see_other }
       format.json { render :show, status: :created }
     end
+  rescue ArgumentError => e
+    refuse(e.message)
   rescue ActiveRecord::RecordInvalid => e
     refuse(e.record.errors.full_messages.to_sentence)
+  rescue ActiveRecord::RecordNotFound
+    refuse("That item no longer exists.")
   end
 
   def ignore
@@ -66,11 +67,9 @@ class InboundEmailsController < ApplicationController
     return unless params.key?(:items)
 
     # JSON sends an array; the form sends a hash keyed by line index.
-    lines = params.expect(items: [ [ :include, :name, :manufacturer, :category, :weight_grams, :quantity, :worn, :consumable, :notes ] ])
+    lines = params.expect(items: [ [ :action, :item_id, :name, :manufacturer, :category, :weight_grams, :quantity, :worn, :consumable, :notes ] ])
     lines = lines.to_h.sort_by { |index, _| index.to_i }.map(&:last) unless lines.is_a?(Array)
-    lines.map(&:to_h)
-          .reject { |line| line.key?("include") && !ActiveModel::Type::Boolean.new.cast(line["include"]) }
-          .map { |line| line.except("include") }
+    lines.map(&:to_h).map { |line| line.merge("action" => InboundEmail::ACTIONS.include?(line["action"]) ? line["action"] : "add") }
   end
 
   def refuse(message)

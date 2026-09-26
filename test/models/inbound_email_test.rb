@@ -5,7 +5,7 @@ class InboundEmailTest < ActiveSupport::TestCase
     email = inbound_emails(:waiting_order)
     socks = email.proposal.last
 
-    created = email.add_items!([ socks ])
+    created = email.review!([ socks.merge("action" => "add") ])
 
     item = created.sole
     assert_equal "Example Wool Socks", item.name
@@ -22,6 +22,50 @@ class InboundEmailTest < ActiveSupport::TestCase
 
     assert_equal items(:tent), email.existing_item_for({ "name" => "example TENT", "manufacturer" => "example co" })
     assert_nil email.existing_item_for({ "name" => "Example Tent", "manufacturer" => "Someone Else" })
+  end
+
+  test "the default review records a purchase on a match and adds the rest" do
+    email = inbound_emails(:waiting_order)
+
+    assert_equal [ [ "link", items(:tent).id ], [ "add", nil ] ], email.default_review.map { |line| [ line["action"], line["item_id"] ] }
+  end
+
+  test "recording a purchase on an existing item adds no item and notes the order" do
+    email = inbound_emails(:waiting_order)
+
+    assert_no_difference -> { Item.count } do
+      email.review!([ email.proposal.first.merge("action" => "link", "item_id" => items(:tent).id) ])
+    end
+
+    tent = items(:tent).reload
+    assert_equal Date.new(2026, 9, 19), tent.purchased_on
+    assert_equal email, tent.inbound_email
+    assert_includes tent.notes, "Bought from Example Outfitters, order EX-1."
+    assert_empty email.reload.created_item_ids
+  end
+
+  test "an earlier purchase date and order email are kept" do
+    items(:tent).update!(purchased_on: Date.new(2020, 5, 1))
+    email = inbound_emails(:waiting_order)
+
+    email.review!([ { "action" => "link", "item_id" => items(:tent).id } ])
+
+    assert_equal Date.new(2020, 5, 1), items(:tent).reload.purchased_on
+  end
+
+  test "buying a wishlist item makes it owned" do
+    email = inbound_emails(:waiting_order)
+
+    email.review!([ { "action" => "link", "item_id" => items(:wishlist_pack).id } ])
+
+    assert_equal "owned", items(:wishlist_pack).reload.status
+  end
+
+  test "reviewing with every line skipped is refused and changes nothing" do
+    email = inbound_emails(:waiting_order)
+
+    assert_raises(ArgumentError) { email.review!(email.proposal.map { |line| line.merge("action" => "skip") }) }
+    assert_equal "received", email.reload.status
   end
 
   test "claimable only once the LLM has confirmed, a human has handled it, or a known retailer sent it" do
@@ -44,7 +88,7 @@ class InboundEmailTest < ActiveSupport::TestCase
 
   test "deleting an email keeps the gear that came from it" do
     email = inbound_emails(:waiting_order)
-    item = email.add_items!([ email.proposal.last ]).sole
+    item = email.review!([ email.proposal.last.merge("action" => "add") ]).sole
 
     email.destroy!
 
