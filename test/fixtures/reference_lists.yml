@@ -1,0 +1,8 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+example_ul:
+  name: Example Ultralight List
+  author: Example Author
+  source_url: https://example.com/gear-list

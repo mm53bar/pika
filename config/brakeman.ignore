@@ -1,0 +1,14 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "e309736c95d7e9adf35e6d95d50107d76ccd506a3c41e8aeb6fb1044cfbaaab3",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/reference_lists/show.html.erb",
+      "line": 9,
+      "note": "Closed twice over. ReferenceList#source_url has a model validation anchored at both ends (%r{\\Ahttps?://\\S+\\z}i), so no non-http(s) scheme can be saved through any path that runs validations; and the view calls ReferenceList#safe_source_url, which re-parses at render time and returns nil unless the result is a URI::HTTP with a host. Brakeman flags any model-derived href and cannot see either guard."
+    }
+  ],
+  "updated": "2026-09-26T00:00:00Z",
+  "brakeman_version": "8.0.6"
+}

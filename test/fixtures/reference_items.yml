@@ -1,0 +1,43 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+tarp:
+  reference_list: example_ul
+  name: Example Tarp
+  category: Shelter
+  weight_grams: 300
+
+quilt:
+  reference_list: example_ul
+  name: Example Quilt
+  category: Sleep System
+  weight_grams: 450
+
+pack:
+  reference_list: example_ul
+  name: Example Pack
+  category: Pack
+  weight_grams: 500
+
+stuff_sack:
+  reference_list: example_ul
+  name: Example Stuff Sack
+  category: Pack
+  weight_grams: 10
+  quantity: 2
+
+shoes:
+  reference_list: example_ul
+  name: Example Shoes
+  category: Footwear
+  weight_grams: 250
+  quantity: 2
+  worn: true
+
+fuel:
+  reference_list: example_ul
+  name: Example Fuel
+  category: Fuel
+  weight_grams: 100
+  consumable: true

@@ -1,0 +1,41 @@
+<%= form_with model: meal, class: "space-y-6" do |form| %>
+  <%= render "shared/errors", record: meal %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <%= form.label :name, class: label_classes %>
+      <%= form.text_field :name, required: true, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :brand, class: label_classes %>
+      <%= form.text_field :brand, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :meal_type, "Type", class: label_classes %>
+      <%= form.select :meal_type, Meal::MEAL_TYPES.map { |t| [ t.humanize, t ] }, {}, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :rating, class: label_classes %>
+      <%= form.select :rating, (1..5).map { |r| [ "★" * r, r ] }, { include_blank: "Unrated" }, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :calories, class: label_classes %>
+      <%= form.number_field :calories, min: 0, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :weight_grams, "Weight (g)", class: label_classes %>
+      <%= form.number_field :weight_grams, min: 0, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :would_buy_again, "Buy again?", class: label_classes %>
+      <%= form.select :would_buy_again, [ [ "Yes", true ], [ "No", false ] ], { include_blank: "Undecided" }, class: field_classes %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: label_classes %>
+    <%= form.textarea :notes, rows: 3, class: field_classes %>
+  </div>
+
+  <%= form.submit class: button_classes %>
+<% end %>

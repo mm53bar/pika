@@ -1,0 +1,25 @@
+<% content_for :title, "Trips" %>
+
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold tracking-tight">Trips</h1>
+  <%= link_to "New trip", new_trip_path, class: button_classes %>
+</div>
+
+<% if @trips.empty? %>
+  <p class="text-stone-500">No trips yet.</p>
+<% else %>
+  <ul class="divide-y divide-stone-200 rounded-md border border-stone-200 bg-white">
+    <% @trips.each do |trip| %>
+      <li id="<%= dom_id(trip) %>" class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
+        <div>
+          <%= link_to trip.name, trip, class: "font-medium hover:text-teal-800" %>
+          <p class="text-sm text-stone-500"><%= [ trip.trail, trip.destination ].compact_blank.join(" · ") %></p>
+        </div>
+        <div class="text-right text-sm text-stone-500">
+          <% if trip.starts_on %><%= trip.starts_on.to_fs(:long) %><% end %>
+          <% if trip.nights %><span>· <%= pluralize(trip.nights, "night") %></span><% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

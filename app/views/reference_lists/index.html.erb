@@ -1,0 +1,23 @@
+<% content_for :title, "Reference lists" %>
+
+<div class="mb-2 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold tracking-tight">Reference lists</h1>
+  <%= link_to "New list", new_reference_list_path, class: button_classes %>
+</div>
+<p class="mb-6 text-sm text-stone-500">Other people's published gear lists, to compare against.</p>
+
+<% if @reference_lists.empty? %>
+  <p class="text-stone-500">No reference lists yet.</p>
+<% else %>
+  <ul class="divide-y divide-stone-200 rounded-md border border-stone-200 bg-white">
+    <% @reference_lists.each do |list| %>
+      <li id="<%= dom_id(list) %>" class="flex items-baseline justify-between px-4 py-3">
+        <div>
+          <%= link_to list.name, list, class: "font-medium hover:text-teal-800" %>
+          <% if list.author.present? %><span class="text-sm text-stone-500">by <%= list.author %></span><% end %>
+        </div>
+        <span class="text-sm text-stone-500">base <%= weight(list.weight.base_grams) %></span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

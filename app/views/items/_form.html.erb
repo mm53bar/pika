@@ -1,0 +1,64 @@
+<%= form_with model: item, class: "space-y-6" do |form| %>
+  <%= render "shared/errors", record: item %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <%= form.label :name, class: label_classes %>
+      <%= form.text_field :name, required: true, class: field_classes %>
+    </div>
+
+    <div>
+      <%= form.label :manufacturer, class: label_classes %>
+      <%= form.text_field :manufacturer, class: field_classes %>
+    </div>
+
+    <div>
+      <%= form.label :category, class: label_classes %>
+      <%= form.text_field :category, required: true, list: "item-categories", class: field_classes %>
+      <datalist id="item-categories">
+        <% Item.categories.each do |category| %><option value="<%= category %>"><% end %>
+      </datalist>
+    </div>
+
+    <div>
+      <%= form.label :status, class: label_classes %>
+      <%= form.select :status, Item::STATUSES.map { |s| [ s.humanize, s ] }, {}, class: field_classes %>
+    </div>
+
+    <div>
+      <%= form.label :weight_grams, "Listed weight (g)", class: label_classes %>
+      <%= form.number_field :weight_grams, min: 0, class: field_classes %>
+      <p class="mt-1 text-xs text-stone-500">From the spec sheet or the retailer.</p>
+    </div>
+
+    <div>
+      <%= form.label :measured_weight_grams, "Weighed (g)", class: label_classes %>
+      <%= form.number_field :measured_weight_grams, min: 0, class: field_classes %>
+      <p class="mt-1 text-xs text-stone-500">What your scale says. Used instead of the listed weight.</p>
+    </div>
+
+    <div>
+      <%= form.label :unit_weight_grams, "Weight per unit (g)", class: label_classes %>
+      <%= form.number_field :unit_weight_grams, min: 0, step: 0.01, class: field_classes %>
+      <p class="mt-1 text-xs text-stone-500">For things packed by count. Multiplied by quantity.</p>
+    </div>
+
+    <div>
+      <%= form.label :unit_label, "Unit name", class: label_classes %>
+      <%= form.text_field :unit_label, placeholder: "piece", class: field_classes %>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+    <label class="flex items-center gap-2"><%= form.check_box :worn %> Usually worn, not carried</label>
+    <label class="flex items-center gap-2"><%= form.check_box :consumable %> Consumable (gets used up)</label>
+    <label class="flex items-center gap-2"><%= form.check_box :retired %> Retired</label>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: label_classes %>
+    <%= form.textarea :notes, rows: 4, class: field_classes %>
+  </div>
+
+  <%= form.submit class: button_classes %>
+<% end %>

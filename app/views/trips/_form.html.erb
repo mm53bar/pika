@@ -1,0 +1,41 @@
+<%= form_with model: trip, class: "space-y-6" do |form| %>
+  <%= render "shared/errors", record: trip %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div class="sm:col-span-2">
+      <%= form.label :name, class: label_classes %>
+      <%= form.text_field :name, required: true, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :trail, class: label_classes %>
+      <%= form.text_field :trail, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :destination, class: label_classes %>
+      <%= form.text_field :destination, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :starts_on, "Start", class: label_classes %>
+      <%= form.date_field :starts_on, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :ends_on, "End", class: label_classes %>
+      <%= form.date_field :ends_on, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :season, class: label_classes %>
+      <%= form.text_field :season, placeholder: "summer, fall…", class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :terrain, class: label_classes %>
+      <%= form.text_field :terrain, placeholder: "alpine, forest…", class: field_classes %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: label_classes %>
+    <%= form.textarea :notes, rows: 6, class: field_classes %>
+  </div>
+
+  <%= form.submit class: button_classes %>
+<% end %>

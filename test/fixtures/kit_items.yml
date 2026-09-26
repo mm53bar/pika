@@ -1,0 +1,19 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+summer_tent:
+  kit: summer_overnight
+  item: tent
+
+summer_quilt:
+  kit: summer_overnight
+  item: quilt
+
+summer_stove:
+  kit: summer_overnight
+  item: stove
+
+summer_fuel:
+  kit: summer_overnight
+  item: fuel

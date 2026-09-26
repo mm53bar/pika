@@ -1,0 +1,57 @@
+require_relative "boot"
+
+require "rails"
+# Pick the frameworks you want:
+require "active_model/railtie"
+require "active_job/railtie"
+require "active_record/railtie"
+require "active_storage/engine"
+require "action_controller/railtie"
+require "action_mailer/railtie"
+# require "action_mailbox/engine"
+# require "action_text/engine"
+require "action_view/railtie"
+require "action_cable/engine"
+require "rails/test_unit/railtie"
+
+# Require the gems listed in Gemfile, including any gems
+# you've limited to :test, :development, or :production.
+Bundler.require(*Rails.groups)
+
+module Pika
+  class Application < Rails::Application
+    # Initialize configuration defaults for originally generated Rails version.
+    config.load_defaults 8.1
+
+    # Please, add to the `ignore` list any other `lib` subdirectories that do
+    # not contain `.rb` files, or that should not be reloaded or eager loaded.
+    # Common ones are `templates`, `generators`, or `middleware`, for example.
+    config.autoload_lib(ignore: %w[assets tasks])
+
+    # The running build's git SHA, written into REVISION/REVISION_SHORT by the
+    # Dockerfile so the footer can say which commit is being served. Falls back to
+    # "dev" outside a built image, and the Dockerfile writes "unknown" if it built
+    # without a .git directory.
+    revision       = Rails.root.join("REVISION")
+    revision_short = Rails.root.join("REVISION_SHORT")
+    config.x.git_sha       = revision.exist?       ? revision.read.strip       : "dev"
+    config.x.git_sha_short = revision_short.exist? ? revision_short.read.strip : "dev"
+
+    # Bloom attaches no files, so the `image_processing` gem was dropped from the
+    # Gemfile and libvips from the image. Active Storage still comes in via
+    # `rails/all` and warns on every boot that variants need a processor it can't
+    # find — disabling it says out loud that no variants are wanted.
+    config.active_storage.variant_processor = :disabled
+
+    # Configuration for the application, engines, and railties goes here.
+    #
+    # These settings can be overridden in specific environments using the files
+    # in config/environments, which are processed later.
+    #
+    # config.time_zone = "Central Time (US & Canada)"
+    # config.eager_load_paths << Rails.root.join("extras")
+
+    # Don't generate system test files.
+    config.generators.system_tests = nil
+  end
+end

@@ -1,0 +1,35 @@
+<% content_for :title, "Meals" %>
+
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold tracking-tight">Meals</h1>
+  <%= link_to "Add meal", new_meal_path, class: button_classes %>
+</div>
+
+<% if @meals.empty? %>
+  <p class="text-stone-500">No meals yet.</p>
+<% else %>
+  <% @meals.group_by(&:meal_type).each do |meal_type, meals| %>
+    <section class="mb-8">
+      <h2 class="mb-2 border-b border-stone-200 pb-1 font-semibold text-stone-700"><%= meal_type.humanize %></h2>
+      <table class="w-full text-sm">
+        <thead class="text-left text-xs text-stone-500">
+          <tr><th class="py-1 font-normal"></th><th class="py-1 text-right font-normal">kcal</th><th class="py-1 text-right font-normal">weight</th><th class="py-1 text-right font-normal">kcal/100 g</th><th class="py-1 text-right font-normal">rating</th></tr>
+        </thead>
+        <tbody>
+          <% meals.each do |meal| %>
+            <tr id="<%= dom_id(meal) %>" class="border-b border-stone-100 last:border-0">
+              <td class="py-2 pr-3">
+                <%= link_to meal.display_name, meal, class: "font-medium hover:text-teal-800" %>
+                <% unless meal.would_buy_again.nil? %><%= badge(meal.would_buy_again ? "buy again" : "skip", meal.would_buy_again ? :measured : :neutral) %><% end %>
+              </td>
+              <td class="py-2 text-right tabular-nums"><%= meal.calories || "—" %></td>
+              <td class="py-2 text-right tabular-nums"><%= weight(meal.weight_grams) %></td>
+              <td class="py-2 text-right tabular-nums"><%= meal.calories_per_100g || "—" %></td>
+              <td class="py-2 text-right"><%= meal.rating ? "★" * meal.rating : "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% end %>
+<% end %>

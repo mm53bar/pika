@@ -1,0 +1,7 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+summer_overnight:
+  name: Summer Overnight
+  season: summer

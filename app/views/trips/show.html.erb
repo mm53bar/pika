@@ -1,0 +1,138 @@
+<% content_for :title, @trip.name %>
+<% weight_summary = @trip.weight %>
+
+<div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight"><%= @trip.name %></h1>
+    <p class="text-sm text-stone-500">
+      <%= [ @trip.trail, @trip.destination ].compact_blank.join(" · ") %>
+    </p>
+    <p class="text-sm text-stone-500">
+      <% if @trip.starts_on %><%= @trip.starts_on.to_fs(:long) %><% end %><% if @trip.ends_on %> – <%= @trip.ends_on.to_fs(:long) %><% end %>
+      <% if @trip.nights %>· <%= pluralize(@trip.nights, "night") %><% end %>
+      <% if @trip.season.present? %>· <%= @trip.season %><% end %>
+      <% if @trip.terrain.present? %>· <%= @trip.terrain %><% end %>
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_trip_path(@trip), class: button_classes(:secondary) %>
+    <%= button_to "Delete", @trip, method: :delete, class: button_classes(:danger), data: { turbo_confirm: "Delete #{@trip.name}?" } %>
+  </div>
+</div>
+
+<%= render "shared/weight_summary", weight: weight_summary %>
+
+<div class="mt-6 grid gap-4 sm:grid-cols-2">
+  <%= form_with url: pack_trip_path(@trip), method: :post, class: "flex items-end gap-2 rounded-md border border-stone-200 bg-white p-4" do |form| %>
+    <div class="grow">
+      <%= form.label :kit_id, "Pack from a kit", class: label_classes %>
+      <%= form.collection_select :kit_id, Kit.ordered, :id, :name, { selected: @trip.kit_id }, class: field_classes %>
+    </div>
+    <%= form.submit "Pack", class: button_classes(:secondary) %>
+  <% end %>
+
+  <%= form_with model: [ @trip, TripItem.new ], class: "flex items-end gap-2 rounded-md border border-stone-200 bg-white p-4" do |form| %>
+    <div class="grow">
+      <%= form.label :item_id, "Add gear", class: label_classes %>
+      <%= form.select :item_id,
+            grouped_options_for_select(Item.owned.active.where.not(id: @trip.trip_items.map(&:item_id)).ordered
+              .group_by(&:category).transform_values { |items| items.map { |i| [ i.display_name, i.id ] } }),
+            {}, class: field_classes %>
+    </div>
+    <div class="w-16">
+      <%= form.label :quantity, "Qty", class: label_classes %>
+      <%= form.number_field :quantity, value: 1, min: 1, class: field_classes %>
+    </div>
+    <%= form.submit "Add", class: button_classes %>
+  <% end %>
+</div>
+
+<% if @trip.trip_items.empty? %>
+  <p class="mt-8 text-stone-500">Nothing packed yet.</p>
+<% else %>
+  <% @trip.trip_items.group_by(&:category).each do |category, lines| %>
+    <section class="mt-8">
+      <div class="mb-2 flex items-baseline justify-between border-b border-stone-200 pb-1">
+        <h2 class="font-semibold text-stone-700"><%= category %></h2>
+        <span class="text-sm text-stone-500"><%= weight(weight_summary.by_category[category]) %></span>
+      </div>
+      <table class="w-full text-sm">
+        <tbody>
+          <% lines.each do |line| %>
+            <tr id="<%= dom_id(line) %>" class="border-b border-stone-100 last:border-0">
+              <td class="py-2 pr-3">
+                <%= link_to line.item.name, line.item, class: "font-medium hover:text-teal-800" %>
+                <%= item_badges(line.item, worn: line.worn?) %>
+                <% if line.weight_grams_override %><%= badge("trip weight", :override) %><% end %>
+                <% if line.notes.present? %><p class="text-xs text-stone-500"><%= line.notes %></p><% end %>
+              </td>
+              <td class="py-2 pr-3">
+                <%= form_with model: line, class: "flex items-center gap-2" do |form| %>
+                  <%= form.number_field :quantity, min: 1, class: "w-14 rounded border border-stone-300 px-2 py-1", aria: { label: "Quantity" } %>
+                  <label class="flex items-center gap-1 text-xs text-stone-600"><%= form.check_box :worn %> worn</label>
+                  <%= form.number_field :weight_grams_override, min: 0, placeholder: "g", class: "w-20 rounded border border-stone-300 px-2 py-1", aria: { label: "Weight for this trip" } %>
+                  <%= form.submit "Save", class: "text-xs text-teal-800 hover:underline cursor-pointer" %>
+                <% end %>
+              </td>
+              <td class="whitespace-nowrap py-2 text-right tabular-nums"><%= weight(line.line_weight_grams) %></td>
+              <td class="py-2 pl-3 text-right">
+                <%= button_to "Remove", line, method: :delete, class: "text-xs text-red-700 hover:underline cursor-pointer" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% end %>
+<% end %>
+
+<section class="mt-10">
+  <div class="mb-2 flex items-baseline justify-between border-b border-stone-200 pb-1">
+    <h2 class="font-semibold text-stone-700">Meals</h2>
+    <span class="text-sm text-stone-500">
+      <%= number_with_delimiter(@trip.meal_calories) %> kcal · <%= weight(@trip.meal_weight_grams) %>
+    </span>
+  </div>
+  <% if @trip.trip_meals.any? %>
+    <table class="w-full text-sm">
+      <tbody>
+        <% @trip.trip_meals.each do |trip_meal| %>
+          <tr id="<%= dom_id(trip_meal) %>" class="border-b border-stone-100 last:border-0">
+            <td class="py-2 pr-3">
+              <%= link_to trip_meal.meal.display_name, trip_meal.meal, class: "font-medium hover:text-teal-800" %>
+              <span class="text-stone-500"><%= trip_meal.meal.meal_type %></span>
+            </td>
+            <td class="py-2 pr-3">
+              <%= form_with model: trip_meal, class: "flex items-center gap-2" do |form| %>
+                <%= form.number_field :quantity, min: 1, class: "w-14 rounded border border-stone-300 px-2 py-1", aria: { label: "Quantity" } %>
+                <%= form.submit "Save", class: "text-xs text-teal-800 hover:underline cursor-pointer" %>
+              <% end %>
+            </td>
+            <td class="py-2 pl-3 text-right">
+              <%= button_to "Remove", trip_meal, method: :delete, class: "text-xs text-red-700 hover:underline cursor-pointer" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <%= form_with model: [ @trip, TripMeal.new ], class: "mt-3 flex items-end gap-2" do |form| %>
+    <div class="grow">
+      <%= form.label :meal_id, "Add a meal", class: label_classes %>
+      <%= form.collection_select :meal_id, Meal.ordered, :id, :display_name, {}, class: field_classes %>
+    </div>
+    <div class="w-16">
+      <%= form.label :quantity, "Qty", class: label_classes %>
+      <%= form.number_field :quantity, value: 1, min: 1, class: field_classes %>
+    </div>
+    <%= form.submit "Add", class: button_classes(:secondary) %>
+  <% end %>
+</section>
+
+<% if @trip.notes.present? %>
+  <section class="mt-10">
+    <h2 class="mb-2 font-semibold text-stone-700">Notes</h2>
+    <div class="whitespace-pre-line text-sm text-stone-700"><%= @trip.notes %></div>
+  </section>
+<% end %>

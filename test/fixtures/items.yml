@@ -1,0 +1,64 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+# Placeholder inventory, named "Example …" so it can't be mistaken for anyone's
+# gear. Weights are chosen to make PackWeight arithmetic easy to check by hand.
+
+tent:
+  name: Example Tent
+  manufacturer: Example Co
+  category: Shelter
+  weight_grams: 900
+  measured_weight_grams: 870
+
+quilt:
+  name: Example Quilt
+  category: Sleep System
+  weight_grams: 600
+
+rain_jacket:
+  name: Example Rain Jacket
+  category: Clothing
+  weight_grams: 200
+
+trail_runners:
+  name: Example Trail Runners
+  category: Footwear
+  weight_grams: 700
+  worn: true
+
+stove:
+  name: Example Stove
+  category: Kitchen
+  weight_grams: 50
+
+fuel:
+  name: Example Fuel
+  category: Fuel
+  weight_grams: 200
+  consumable: true
+
+drink_mix:
+  name: Example Drink Mix
+  category: Food
+  unit_weight_grams: 2.5
+  unit_label: stick
+  consumable: true
+
+water_bottle:
+  name: Example Water Bottle
+  category: Water
+  weight_grams: 40
+
+wishlist_pack:
+  name: Example Wishlist Pack
+  category: Pack
+  weight_grams: 500
+  status: wishlist
+
+retired_mat:
+  name: Example Retired Mat
+  category: Sleep System
+  weight_grams: 400
+  retired: true

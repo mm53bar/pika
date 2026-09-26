@@ -1,0 +1,15 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+ridge_loop:
+  name: Ridge Loop
+  trail: Example Ridge Trail
+  destination: Somewhere Alpine
+  starts_on: 2026-07-10
+  ends_on: 2026-07-12
+  season: summer
+  terrain: alpine
+
+undated:
+  name: Someday Trip

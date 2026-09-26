@@ -1,0 +1,4 @@
+<% content_for :title, "Edit #{@reference_list.name}" %>
+
+<%= render "shared/new_heading", title: "Edit #{@reference_list.name}", back: @reference_list %>
+<%= render "form", reference_list: @reference_list %>

@@ -1,0 +1,21 @@
+<%= form_with model: kit, class: "space-y-6" do |form| %>
+  <%= render "shared/errors", record: kit %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <%= form.label :name, class: label_classes %>
+      <%= form.text_field :name, required: true, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :season, class: label_classes %>
+      <%= form.text_field :season, class: field_classes %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :description, class: label_classes %>
+    <%= form.textarea :description, rows: 3, class: field_classes %>
+  </div>
+
+  <%= form.submit class: button_classes %>
+<% end %>

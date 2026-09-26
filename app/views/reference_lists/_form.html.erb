@@ -1,0 +1,25 @@
+<%= form_with model: reference_list, class: "space-y-6" do |form| %>
+  <%= render "shared/errors", record: reference_list %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <%= form.label :name, class: label_classes %>
+      <%= form.text_field :name, required: true, class: field_classes %>
+    </div>
+    <div>
+      <%= form.label :author, class: label_classes %>
+      <%= form.text_field :author, class: field_classes %>
+    </div>
+    <div class="sm:col-span-2">
+      <%= form.label :source_url, "Source URL", class: label_classes %>
+      <%= form.url_field :source_url, class: field_classes %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: label_classes %>
+    <%= form.textarea :notes, rows: 3, class: field_classes %>
+  </div>
+
+  <%= form.submit class: button_classes %>
+<% end %>

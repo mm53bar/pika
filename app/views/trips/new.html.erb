@@ -1,0 +1,4 @@
+<% content_for :title, "New trip" %>
+
+<%= render "shared/new_heading", title: "New trip", back: trips_path %>
+<%= render "form", trip: @trip %>

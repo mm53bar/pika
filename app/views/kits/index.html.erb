@@ -1,0 +1,23 @@
+<% content_for :title, "Kits" %>
+
+<div class="mb-2 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold tracking-tight">Kits</h1>
+  <%= link_to "New kit", new_kit_path, class: button_classes %>
+</div>
+<p class="mb-6 text-sm text-stone-500">Reusable packing lists. A trip packs from one, then goes its own way.</p>
+
+<% if @kits.empty? %>
+  <p class="text-stone-500">No kits yet.</p>
+<% else %>
+  <ul class="divide-y divide-stone-200 rounded-md border border-stone-200 bg-white">
+    <% @kits.each do |kit| %>
+      <li id="<%= dom_id(kit) %>" class="flex items-baseline justify-between px-4 py-3">
+        <div>
+          <%= link_to kit.name, kit, class: "font-medium hover:text-teal-800" %>
+          <% if kit.season.present? %><span class="text-sm text-stone-500"><%= kit.season %></span><% end %>
+        </div>
+        <span class="text-sm text-stone-500">base <%= weight(kit.weight.base_grams) %></span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
