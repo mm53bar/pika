@@ -58,6 +58,19 @@ read the code and `docs/adr/` for the actual design.
   If it fails, fix or surface it; do not declare work done.
 - Secrets are a plain `SECRET_KEY_BASE` env var. Rails encrypted credentials are unused and
   git-ignored. `compose.yaml` carries a placeholder. See `docs/adr/20260926-secrets-from-env.md`.
+- **Purchase intake never takes mail that isn't Pika's.** The mailbox is shared with other
+  apps. `PurchaseEmailClassifier` only decides what is worth an LLM call; a message is moved
+  into Pika's folder only once `InboundEmail#claimable?` — the LLM confirmed a gear purchase, a
+  human handled it, or the LLM never managed a read but a known retailer sent it. `not_gear`
+  mail stays in INBOX, is never re-read, and never moves. Fetch with `BODY.PEEK[]`; move only
+  into Pika's own folder. See `docs/adr/20260926-purchase-intake-from-a-shared-mailbox.md`.
+- **Nothing from an email reaches the inventory without review.** Intake proposes;
+  `InboundEmail#add_items!` is the only path from email to `Item`, called by a human (page or
+  API). The LLM prompt in `GearTriager` was tuned against a live model — change it by testing
+  against one, not by editing it blind. It must never be given, or produce, real personal
+  examples in this repo.
+- The `Retailer` list ships empty — which stores someone buys from is personal. Load it over
+  the API.
 - Deployment is a single container: web and Solid Queue run together in Puma — no separate
   worker service, no Redis.
 - Record significant architectural decisions in `docs/adr/` (`## Context` / `## Decision` /

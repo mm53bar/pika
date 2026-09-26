@@ -1,6 +1,7 @@
 class Item < ApplicationRecord
   STATUSES = %w[ owned wishlist considering ].freeze
 
+  belongs_to :inbound_email, optional: true
   has_many :kit_items, dependent: :destroy
   has_many :trip_items, dependent: :destroy
 

@@ -32,3 +32,14 @@ services:
       TZ: UTC
       # Rails session/cookie signing key (required). Generate with: openssl rand -hex 64
       SECRET_KEY_BASE: replace-with-64-byte-hex
+      # Purchase intake (optional — leave these out and it stays off).
+      # IMAP_HOST: imap.example.com
+      # IMAP_PORT: "993"
+      # IMAP_USERNAME: inbox@example.com
+      # IMAP_PASSWORD: an-app-password
+      # INTAKE_MAILBOX: INBOX            # where to read (default INBOX)
+      # INTAKE_ARCHIVE_MAILBOX: Pika     # where claimed mail is moved (default Pika)
+      # Any OpenAI-compatible chat endpoint; reads the emails. Without it nothing is claimed.
+      # LLM_BASE_URL: http://llm.example.internal:11434/v1
+      # LLM_MODEL: some-model
+      # LLM_API_KEY: optional

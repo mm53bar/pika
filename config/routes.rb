@@ -15,6 +15,16 @@ Rails.application.routes.draw do
 
   resources :meals
 
+  resources :inbound_emails, only: %i[ index show ] do
+    member do
+      post :add_items
+      post :ignore
+      post :retriage
+    end
+  end
+
+  resources :retailers, only: %i[ index create update destroy ]
+
   resources :reference_lists do
     resources :reference_items, only: %i[ create update destroy ], shallow: true
   end

@@ -1,0 +1,42 @@
+<% content_for :title, "Retailers" %>
+
+<div class="mb-2 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold tracking-tight">Retailers</h1>
+  <%= link_to "Inbox", inbound_emails_path, class: button_classes(:secondary) %>
+</div>
+<p class="mb-6 text-sm text-stone-500">
+  A store's address or domain found anywhere in an email — including a forwarded one — marks it as a likely purchase.
+  Order language alone still works; this makes it surer.
+</p>
+
+<%= form_with model: @retailer, class: "mb-6 flex flex-wrap items-end gap-2" do |form| %>
+  <div>
+    <%= form.label :value, "Address or domain", class: label_classes %>
+    <%= form.text_field :value, required: true, placeholder: "example-outfitters.com", class: field_classes %>
+  </div>
+  <div>
+    <%= form.label :name, class: label_classes %>
+    <%= form.text_field :name, placeholder: "Example Outfitters", class: field_classes %>
+  </div>
+  <%= form.submit "Add", class: button_classes %>
+<% end %>
+
+<% if @retailers.empty? %>
+  <p class="text-stone-500">No retailers yet.</p>
+<% else %>
+  <ul class="divide-y divide-stone-200 rounded-md border border-stone-200 bg-white">
+    <% @retailers.each do |retailer| %>
+      <li id="<%= dom_id(retailer) %>" class="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+        <span class="<%= "text-stone-400 line-through" unless retailer.active? %>">
+          <span class="font-mono"><%= retailer.value %></span>
+          <% if retailer.name.present? %><span class="text-stone-500"><%= retailer.name %></span><% end %>
+        </span>
+        <span class="flex gap-3">
+          <%= button_to retailer.active? ? "Pause" : "Resume", retailer, method: :patch,
+                params: { retailer: { active: !retailer.active? } }, class: "text-xs text-teal-800 hover:underline cursor-pointer" %>
+          <%= button_to "Remove", retailer, method: :delete, class: "text-xs text-red-700 hover:underline cursor-pointer" %>
+        </span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

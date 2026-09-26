@@ -28,6 +28,13 @@
   </div>
 </dl>
 
+<% if @item.purchased_on || @item.inbound_email %>
+  <p class="mt-4 text-sm text-stone-600">
+    Bought <%= @item.purchased_on&.to_fs(:long) %>
+    <% if @item.inbound_email %>· <%= link_to "order email", @item.inbound_email, class: "underline hover:text-teal-800" %><% end %>
+  </p>
+<% end %>
+
 <% if @item.notes.present? %>
   <div class="mt-6 whitespace-pre-line text-sm text-stone-700"><%= @item.notes %></div>
 <% end %>

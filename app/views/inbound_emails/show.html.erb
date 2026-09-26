@@ -1,0 +1,90 @@
+<% content_for :title, @inbound_email.subject.presence || "Email" %>
+
+<div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <p class="text-sm text-stone-500"><%= link_to "Inbox", inbound_emails_path, class: "hover:text-teal-800" %></p>
+    <h1 class="text-2xl font-semibold tracking-tight"><%= @inbound_email.subject.presence || "(no subject)" %></h1>
+    <p class="text-sm text-stone-500">
+      <%= @inbound_email.from_address %> · <%= @inbound_email.received_at.to_fs(:long) %>
+      <% if @inbound_email.retailer %>· <%= @inbound_email.retailer %><% end %>
+      <% if @inbound_email.order_number %>· order <%= @inbound_email.order_number %><% end %>
+    </p>
+    <div class="mt-2"><%= badge(@inbound_email.status.humanize) %></div>
+  </div>
+  <div class="flex gap-2">
+    <%= button_to "Read again", retriage_inbound_email_path(@inbound_email), class: button_classes(:secondary) %>
+    <% if @inbound_email.status == "received" %>
+      <%= button_to "Ignore", ignore_inbound_email_path(@inbound_email), class: button_classes(:secondary) %>
+    <% end %>
+  </div>
+</div>
+
+<% if @inbound_email.reason.present? %>
+  <p class="mb-6 text-sm text-stone-600"><%= @inbound_email.reason %></p>
+<% end %>
+
+<% if @inbound_email.status == "received" && @inbound_email.proposal.any? %>
+  <%= form_with url: add_items_inbound_email_path(@inbound_email), method: :post, class: "space-y-3" do |form| %>
+    <% @inbound_email.proposal.each_with_index do |line, index| %>
+      <% existing = @inbound_email.existing_item_for(line) %>
+      <fieldset class="grid gap-3 rounded-md border border-stone-200 bg-white p-4 sm:grid-cols-6">
+        <label class="flex items-center gap-2 text-sm font-medium sm:col-span-6">
+          <%= hidden_field_tag "items[#{index}][include]", "0", id: nil %>
+          <%= check_box_tag "items[#{index}][include]", "1", existing.nil?, id: "items_#{index}_include" %>
+          Add this
+          <% if existing %>— <span class="font-normal text-amber-800">already in your gear as <%= link_to existing.display_name, existing, class: "underline" %></span><% end %>
+          <% if line["quantity"].to_i > 1 %><span class="font-normal text-stone-500">· bought <%= line["quantity"] %></span><% end %>
+        </label>
+        <div class="sm:col-span-3">
+          <%= label_tag "items_#{index}_name", "Name", class: label_classes %>
+          <%= text_field_tag "items[#{index}][name]", line["name"], id: "items_#{index}_name", class: field_classes %>
+        </div>
+        <div class="sm:col-span-2">
+          <%= label_tag "items_#{index}_manufacturer", "Manufacturer", class: label_classes %>
+          <%= text_field_tag "items[#{index}][manufacturer]", line["manufacturer"], id: "items_#{index}_manufacturer", class: field_classes %>
+        </div>
+        <div>
+          <%= label_tag "items_#{index}_category", "Category", class: label_classes %>
+          <%= text_field_tag "items[#{index}][category]", line["category"], id: "items_#{index}_category", list: "item-categories", class: field_classes %>
+        </div>
+        <div class="sm:col-span-2">
+          <%= label_tag "items_#{index}_weight_grams", "Listed weight (g)", class: label_classes %>
+          <%= number_field_tag "items[#{index}][weight_grams]", line["weight_grams"], min: 0, id: "items_#{index}_weight_grams", class: field_classes %>
+          <p class="mt-1 text-xs text-stone-500"><%= line["weight_source"] ? "From the #{line["weight_source"] == "email" ? "email" : "manufacturer's published spec"}" : "Not known — weigh it or look it up" %></p>
+        </div>
+        <div class="sm:col-span-3">
+          <%= label_tag "items_#{index}_notes", "Notes", class: label_classes %>
+          <%= text_field_tag "items[#{index}][notes]", line["notes"], id: "items_#{index}_notes", class: field_classes %>
+        </div>
+        <div class="flex items-end gap-4 pb-2 text-sm">
+          <%= hidden_field_tag "items[#{index}][quantity]", line["quantity"], id: nil %>
+          <label class="flex items-center gap-1"><%= hidden_field_tag "items[#{index}][worn]", "0", id: nil %><%= check_box_tag "items[#{index}][worn]", "1", line["worn"], id: nil %> worn</label>
+          <label class="flex items-center gap-1"><%= hidden_field_tag "items[#{index}][consumable]", "0", id: nil %><%= check_box_tag "items[#{index}][consumable]", "1", line["consumable"], id: nil %> consumable</label>
+        </div>
+      </fieldset>
+    <% end %>
+    <datalist id="item-categories">
+      <% Item.categories.each do |category| %><option value="<%= category %>"><% end %>
+    </datalist>
+    <%= form.submit "Add selected to gear", class: button_classes %>
+  <% end %>
+<% elsif @inbound_email.status == "received" %>
+  <p class="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    The LLM couldn't read an order out of this email. Try reading it again, or add the gear by hand.
+  </p>
+<% elsif @inbound_email.items.any? %>
+  <h2 class="mb-2 font-semibold text-stone-700">Added</h2>
+  <ul class="space-y-1 text-sm">
+    <% @inbound_email.items.each do |item| %>
+      <li><%= link_to item.display_name, item, class: "hover:text-teal-800" %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<details class="mt-8">
+  <summary class="cursor-pointer text-sm text-stone-600">Original email</summary>
+  <pre class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-md border border-stone-200 bg-white p-4 text-xs text-stone-700"><%= @inbound_email.body %></pre>
+  <% if @inbound_email.signals.present? %>
+    <p class="mt-2 text-xs text-stone-500">Flagged by: <%= Array(@inbound_email.signals).join(", ") %></p>
+  <% end %>
+</details>

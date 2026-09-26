@@ -51,9 +51,12 @@ so a client that fetches any page can find the rest.
 | Trips | `/trips.json` | `/trips/:id.json` |
 | Meals | `/meals.json` | `/meals/:id.json` |
 | Reference lists (someone else's list, to compare) | `/reference_lists.json` | `/reference_lists/:id.json` |
+| Inbox (purchase emails awaiting review) | `/inbound_emails.json` | `/inbound_emails/:id.json` |
+| Retailers (stores whose emails mark a purchase) | `/retailers.json` | `/retailers/:id.json` |
 
 Each supports `GET` (index and show), `POST` to the collection, `PATCH` and `DELETE` on
-the record.
+the record — except the Inbox, which is read-only apart from the actions described under
+[Purchase intake](#purchase-intake), and retailers, which have no show.
 
 Lines are **created under their parent** and **updated or deleted by their own id**:
 
@@ -82,10 +85,12 @@ delete the line and create a new one.
 | `worn` | boolean | Usually worn rather than carried. The default for new lines. |
 | `consumable` | boolean | Used up on a trip (food, fuel). Set per item — see below. |
 | `retired` | boolean | No longer in use; kept for history |
+| `purchased_on` | date | |
 | `notes` | string | |
 
-Read-only in responses: `id`, `effective_weight_grams` (measured, else listed), `url`,
-`created_at`, `updated_at`.
+Read-only in responses: `id`, `effective_weight_grams` (measured, else listed),
+`inbound_email_id` (the order email it was added from, if any), `url`, `created_at`,
+`updated_at`.
 
 `GET /items.json` returns **every** item. Filters combine, and only those given apply:
 `?status=owned|wishlist|considering`, `?retired=1` (retired only), `?retired=0` (active
@@ -145,6 +150,43 @@ Read-only: `calories_per_100g`. A trip meal takes `meal_id`, `quantity` and `not
 plain rows, not inventory: `name`, `manufacturer`, `category` (required), `weight_grams`,
 `quantity`, `worn`, `consumable`, `notes`. `GET /reference_lists/:id.json` also returns
 `weight` and `reference_items`.
+
+## Purchase intake
+
+When configured with a mailbox and an LLM, Pika reads the inbox every 15 minutes for gear
+order, receipt and shipping emails (forwarded ones included), has the LLM read out what
+was bought, and holds each one in the Inbox for review. Nothing reaches the inventory until
+it is added.
+
+An inbound email:
+
+| Field | Notes |
+|---|---|
+| `status` | `received` (awaiting review), `added`, `ignored`, or `not_gear` (the LLM said it isn't a gear purchase; left for other readers of the mailbox) |
+| `claimed` | Moved out of the shared inbox into Pika's folder |
+| `retailer`, `order_number`, `ordered_on` | As read by the LLM |
+| `proposed_items` | Lines the LLM read: `name`, `manufacturer`, `category`, `quantity`, `weight_grams`, `weight_source` (`email`, `published` or `null`), `worn`, `consumable`, `notes` |
+| `reason` | The LLM's one-line explanation |
+| `signals`, `score` | Why the first-pass filter flagged it |
+| `triage_attempts` | Failed LLM reads so far; retried up to 3 |
+| `created_item_ids` | Items created from it |
+
+`GET /inbound_emails/:id.json` also returns `body`. `GET /inbound_emails.json` takes
+`?status=`.
+
+| Action | Effect |
+|---|---|
+| `POST /inbound_emails/:id/add_items.json` | Creates one owned item per line and marks it `added`. With no body it takes `proposed_items` as they stand; send `{"items": [...]}` (same fields) to add edited or fewer lines. `422` if already handled. |
+| `POST /inbound_emails/:id/ignore.json` | Marks it `ignored` |
+| `POST /inbound_emails/:id/retriage.json` | Has the LLM read it again now |
+
+An order line for several of one thing becomes a single item; the count goes in its
+notes, with the retailer and order number. Before adding, check `GET /items.json` for the
+same name and manufacturer — the page flags those, but the API adds what it is sent.
+
+A retailer is `value` (an address or domain, matched anywhere in a message, lowercased),
+`name` and `active`. Retailers only make the first-pass filter surer; order language alone
+also works.
 
 ## Weights
 

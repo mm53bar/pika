@@ -10,7 +10,30 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_185609) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_200958) do
+  create_table "inbound_emails", force: :cascade do |t|
+    t.string "message_id", null: false
+    t.string "from_address"
+    t.string "subject"
+    t.text "body"
+    t.datetime "received_at", null: false
+    t.integer "score"
+    t.json "signals"
+    t.string "status", default: "received", null: false
+    t.boolean "claimed", default: false, null: false
+    t.integer "triage_attempts", default: 0, null: false
+    t.json "proposed_items"
+    t.string "retailer"
+    t.string "order_number"
+    t.date "ordered_on"
+    t.string "reason"
+    t.json "created_item_ids"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id"], name: "index_inbound_emails_on_message_id", unique: true
+    t.index ["status"], name: "index_inbound_emails_on_status"
+  end
+
   create_table "items", force: :cascade do |t|
     t.string "name", null: false
     t.string "manufacturer"
@@ -26,7 +49,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_185609) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "purchased_on"
+    t.integer "inbound_email_id"
     t.index ["category"], name: "index_items_on_category"
+    t.index ["inbound_email_id"], name: "index_items_on_inbound_email_id"
   end
 
   create_table "kit_items", force: :cascade do |t|
@@ -87,6 +113,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_185609) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "retailers", force: :cascade do |t|
+    t.string "value", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["value"], name: "index_retailers_on_value", unique: true
+  end
+
   create_table "trip_items", force: :cascade do |t|
     t.integer "trip_id", null: false
     t.integer "item_id", null: false
@@ -127,6 +162,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_185609) do
     t.index ["kit_id"], name: "index_trips_on_kit_id"
   end
 
+  add_foreign_key "items", "inbound_emails", on_delete: :nullify
   add_foreign_key "kit_items", "items", on_delete: :cascade
   add_foreign_key "kit_items", "kits", on_delete: :cascade
   add_foreign_key "reference_items", "reference_lists", on_delete: :cascade

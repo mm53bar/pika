@@ -78,7 +78,7 @@ class ItemsController < ApplicationController
   def item_params
     params.expect(item: [
       :name, :manufacturer, :category, :weight_grams, :measured_weight_grams,
-      :unit_weight_grams, :unit_label, :status, :worn, :consumable, :retired, :notes
+      :unit_weight_grams, :unit_label, :status, :worn, :consumable, :retired, :notes, :purchased_on
     ])
   end
 end

@@ -30,6 +30,10 @@
           <%= nav_link_to "Kits", kits_path %>
           <%= nav_link_to "Meals", meals_path %>
           <%= nav_link_to "Reference lists", reference_lists_path %>
+          <% waiting = InboundEmail.awaiting_review.count %>
+          <%= link_to inbound_emails_path, class: current_page?(inbound_emails_path) ? "font-medium text-teal-800 underline underline-offset-4" : "text-stone-600 hover:text-teal-800" do %>
+            Inbox<% if waiting.positive? %> <span class="ml-0.5 rounded-full bg-teal-700 px-1.5 py-0.5 text-xs font-medium text-white"><%= waiting %></span><% end %>
+          <% end %>
         </nav>
       </div>
     </header>

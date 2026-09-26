@@ -1,0 +1,42 @@
+# Every fixture in this directory is invented. This repo is public and never
+# carries a real person's gear, purchases or trips, nor anyone else's gear list —
+# see docs/adr/20260926-no-personal-data-in-this-repo.md.
+
+# waiting_order proposes one line that duplicates an existing item (Example Co
+# Example Tent) and one that is new.
+waiting_order:
+  message_id: order-1@example.test
+  from_address: A Person <person@example.org>
+  subject: "Fwd: Your Example Outfitters order #EX-1 is confirmed"
+  body: "Order #EX-1. 1 x Example Co Example Tent. 2 x Example Wool Socks."
+  received_at: 2026-09-20 10:00:00
+  score: 6
+  signals: [ "retailer:example-outfitters.test", "subject:your order" ]
+  status: received
+  claimed: true
+  retailer: Example Outfitters
+  order_number: EX-1
+  ordered_on: 2026-09-19
+  proposed_items:
+    - { name: "Example Tent", manufacturer: "Example Co", category: "Shelter", quantity: 1, weight_grams: 900, weight_source: "published", worn: false, consumable: false, notes: null }
+    - { name: "Example Wool Socks", manufacturer: "Example Knits", category: "Clothing", quantity: 2, weight_grams: null, weight_source: null, worn: false, consumable: false, notes: "Medium" }
+
+unreadable:
+  message_id: unreadable@example.test
+  from_address: A Person <person@example.org>
+  subject: "Fwd: Receipt"
+  body: "Your order total is attached."
+  received_at: 2026-09-21 10:00:00
+  score: 3
+  signals: [ "subject:your receipt" ]
+  status: received
+  triage_attempts: 3
+
+handled:
+  message_id: handled@example.test
+  subject: "Fwd: Your order has shipped"
+  body: "Order #EX-0 has shipped."
+  received_at: 2026-09-01 10:00:00
+  status: added
+  claimed: true
+  proposed_items: []
