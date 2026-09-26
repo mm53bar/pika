@@ -50,7 +50,7 @@ class LlmClient
     return nil unless res.code.to_i.between?(200, 299)
 
     content = JSON.parse(res.body).dig("choices", 0, "message", "content")
-    content && JSON.parse(content)
+    content && JSON.parse(unfenced(content))
   rescue *TRANSIENT => e
     Rails.logger.warn("LlmClient unavailable: #{e.class}: #{e.message}")
     raise Unavailable, "#{e.class}: #{e.message}"
@@ -59,5 +59,12 @@ class LlmClient
   rescue StandardError => e
     Rails.logger.error("LlmClient: #{e.class}: #{e.message}")
     nil
+  end
+
+  private
+
+  # Some models wrap JSON in a Markdown fence even in JSON mode.
+  def unfenced(content)
+    content.strip.sub(/\A```(?:json)?\s*\n/i, "").sub(/\n?```\s*\z/, "")
   end
 end
